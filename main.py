@@ -27,7 +27,7 @@ from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_applicati
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
 BASE_WEBHOOK_URL = ''
-WEBHOOK_HOST = 'https://ml-telegram-bot.onrender.com'
+WEBHOOK_HOST = 'https://pvv-bot-aiogram.onrender.com'
 WEBHOOK_PATH = f'/webhook/{TOKEN}'
 WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
 WEB_SERVER_HOST = '0.0.0.0'
