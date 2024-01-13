@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 from dotenv import load_dotenv
+from aiohttp import web
 
 from aiogram import Bot, Dispatcher, F, Router, html
 from aiogram.enums import ParseMode
@@ -20,9 +21,18 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
+BASE_WEBHOOK_URL = ''
+WEBHOOK_HOST = 'https://ml-telegram-bot.onrender.com'
+WEBHOOK_PATH = f'/webhook/{TOKEN}'
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
+WEB_SERVER_HOST = '0.0.0.0'
+WEB_SERVER_PORT = 10000
+
 
 form_router = Router()
 
@@ -33,31 +43,12 @@ class Form(StatesGroup):
     auth_ok_status = State()
     choice_genre = State()
 
-'''
-@form_router.message(Command("cancel"))
-@form_router.message(F.text.casefold() == "cancel")
-async def cancel_handler(message: Message, state: FSMContext) -> None:
-    """
-    Allow user to cancel any action
-    """
-    current_state = await state.get_state()
-    if current_state is None:
-        return
 
-    logging.info("Cancelling state %r", current_state)
-    await state.clear()
-    await message.answer(
-        "Cancelled.",
-        reply_markup=ReplyKeyboardRemove(),
-    )
-'''
 data = {
     'exist_user': '',
     'current_id': 0,
     'current_genre':''
 }
-
-
 
 avaliable_user_id = [1]
 rec_films = ['Фильм1','Фильм2','Фильм3']
@@ -261,7 +252,7 @@ async def predict_film(message: Message,state: FSMContext):
 
 
 
-
+'''
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
@@ -269,7 +260,33 @@ async def main():
 
     await dp.start_polling(bot)
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
+'''
+
+
+
+
+
+async def on_startup(bot: Bot) -> None:
+    await bot.set_webhook(url=WEBHOOK_URL)
+
+def main() -> None:
+    dp = Dispatcher()
+    dp.startup.register(on_startup)
+    dp.include_router(form_router)
+    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+    app = web.Application()
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    main()
