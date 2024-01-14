@@ -9,7 +9,6 @@ import os
 import sys
 from dotenv import load_dotenv
 from aiohttp import web
-
 from aiogram import Bot, Dispatcher, F, Router, html
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart, StateFilter
@@ -22,17 +21,11 @@ from aiogram.types import (
     ReplyKeyboardRemove,
 )
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from LightFMClass import LightFMRecSyc, moveis_fin, movies_to_predict, RecSycFilms, ClassRecSyc
 
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-BASE_WEBHOOK_URL = ''
-WEBHOOK_HOST = 'https://pvv-bot-aiogram.onrender.com'
-WEBHOOK_PATH = f'/webhook/{TOKEN}'
-WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
-WEB_SERVER_HOST = '0.0.0.0'
-WEB_SERVER_PORT = 10000
-
 
 form_router = Router()
 
@@ -50,10 +43,33 @@ data = {
     'current_genre':''
 }
 
-avaliable_user_id = [1]
+avaliable_user_id = [195,1010,7438, 30323, 30349]
 rec_films = ['Фильм1','Фильм2','Фильм3']
-rec_films_genre = ["Комедия","Драма","Фантастика"]
+rec_films_genre = ['Анимация','Вестерн','Военный','Детский','Документальный',
+                   'Драма','Комедия','Криминал','Мистика','Мюзикл','Нуар',
+                   'Приключения','Романтика','Триллер','Ужасы','Фантастика','Фэнтези','Экшен'
+                   ]
 
+genre_dict = {
+    "Экшен":"Action",
+    "Приключения":"Adventure",
+    "Анимация":"Animation",
+    "Детский":"Children's",
+    "Комедия":"Comedy",
+    "Криминал":"Crime",
+    "Документальный":"Documentary",
+    "Драма":"Drama",
+    "Фэнтези":"Fantasy",
+    "Нуар":"Film-Noir",
+    "Ужасы":"Horror",
+    "Мюзикл":"Musical",
+    "Мистика":"Mystery",
+    "Романтика":"Romance",
+    "Фантастика":"Sci-Fi",
+    "Триллер":"Thriller",
+    "Военный":"War",
+    "Вестерн":"Western"
+}
 '''
 Краткое описание:
 1. Вопрос авторизации (если пользователь уже пользовался - НЕТ, если впервые пришел - ДА)
@@ -62,14 +78,14 @@ rec_films_genre = ["Комедия","Драма","Фантастика"]
 4. Открытие основного функционала: 
             - покажи рекомендации           - вывод рекомендаций из всех фильмов
             - покажи рекомендации по жанру  - вывод рекомендаций по жанру
-            - понравится ли мне фильм?      - пользователь вводит название фильма, мы предсказываем понравится ему или нет
+            - понравится ли мне фильм?      - TBD пользователь вводит название фильма, мы предсказываем понравится ему или нет
 '''
 
 ################################################################################################################
 ##############################################   0. Общие ручки   ##############################################
 ################################################################################################################
 
-@form_router.message(StateFilter(default_state),~Command("start"),~Command("authors"))
+@form_router.message(StateFilter(default_state),~Command("start"),~Command("authors"),~Command("test_25"))
 async def unknown_func(message: Message):
     await message.answer(text='Для работы сервиса необходимо авторизоваться (/start)\n',
                          reply_markup=ReplyKeyboardRemove())
@@ -131,8 +147,10 @@ async def first_auth_no(message: Message, state: FSMContext) -> None:
 # 2 -> 4 первый ответ проверка id и переход к меню ИЛИ 2 -> 3 первый ответ проверка id - не найден id
 @form_router.message(Form.check_id_status, F.text.isdigit())
 async def first_auth_no_check_id(message: Message, state: FSMContext) -> None:
+    await state.update_data(current_id=int(message.text))
+    data = await state.get_data()
     if int(message.text) in avaliable_user_id:
-        await message.answer(f"Отлично, пользователь {int(message.text)}! <b>Нажмите кнопку внизу -> Меню</b>",
+        await message.answer(f"Отлично, пользователь {data['current_id']}!\n\n<b>Нажмите кнопку внизу -> Меню</b>",
                              reply_markup=ReplyKeyboardMarkup(
                                  keyboard=[[KeyboardButton(text="Меню")]],
                                  resize_keyboard=True,
@@ -156,7 +174,7 @@ async def first_auth_yes(message: Message, state: FSMContext) -> None:
     await state.update_data(current_id=123456)
     data = await state.get_data()
     await message.answer(
-        f"Ничего страшного!\nТвой новый id {data['current_id']}\n<b>Нажмите кнопку внизу -> Меню</b>",
+        f"Ничего страшного!\nТвой новый id {data['current_id']}\n\n<b>Нажмите кнопку внизу -> Меню</b>",
         parse_mode=ParseMode.HTML,
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
@@ -205,16 +223,24 @@ async def show_summary(message: Message,state: FSMContext) -> None:
                              )
                              )
 
+# 4.1 Ручка обычных рекомендаций, делиться на "холодных" и "обычных пользователе"
 @form_router.message(Form.auth_ok_status, F.text.casefold() == "покажи рекомендации")
 async def list_rec_film(message: Message,state: FSMContext):
     data = await state.get_data()
+    lfm = LightFMRecSyc(model=ClassRecSyc,
+                        RecSycFilms=RecSycFilms,
+                        IMDb_df=moveis_fin,
+                        Genre=None)
     if data['exist_user'] == "new":
-        current_rec_films = "\n".join(["Фильм1_для нового пользователя","Фильм2_для нового пользователя"])
+        result = lfm.recommend(user_id=[123456789], k=5, movies_to_predict=movies_to_predict)
+        current_rec_films = "\n".join(result)
     else:
-        current_rec_films = "\n".join(["Фильм1_для СТАРОГО пользователя", "Фильм2_для СТАРОГО пользователя"])
-    await message.answer(f'Список фильмов которые тебе понравятся:\n{current_rec_films}')
+        result = lfm.recommend(user_id=[data['current_id']], k=5, movies_to_predict=movies_to_predict)
+        current_rec_films = "\n".join(result)
+    await message.answer(f'Список фильмов которые тебе понравятся:\n\n{current_rec_films}')
 
 
+# 4.2 Ручка "жанровых" рекомендаций, делиться на "холодных" и "обычных пользователе"
 @form_router.message(Form.auth_ok_status, F.text.casefold() == "покажи рекомендации по жанру")
 async def choice_genre(message: Message,state: FSMContext):
     keyboard_values = rec_films_genre
@@ -231,12 +257,19 @@ async def choice_genre(message: Message,state: FSMContext):
 async def list_rec_film_genre(message: Message,state: FSMContext):
     await state.update_data(current_genre=message.text)
     data = await state.get_data()
+    lfm = LightFMRecSyc(model=ClassRecSyc,
+                        RecSycFilms=RecSycFilms,
+                        IMDb_df=moveis_fin,
+                        Genre=genre_dict.get(data['current_genre']))
     if data['exist_user'] == "new":
-        current_rec_films = "\n".join(["ЖАНР_Фильм1_для нового пользователя","ЖАНР_Фильм2_для нового пользователя"])
+        result = lfm.recommend(user_id=[123456789], k=5, movies_to_predict=movies_to_predict)
+        current_rec_films = "\n".join(result)
     else:
-        current_rec_films = "\n".join(["ЖАНР_Фильм1_для СТАРОГО пользователя", "ЖАНР_Фильм2_для СТАРОГО пользователя"])
+        result = lfm.recommend(user_id=[data['current_id']], k=5, movies_to_predict=movies_to_predict)
+        current_rec_films = "\n".join(result)
 
-    await message.answer(f"Вы ваши рекомендации по жанру {data['current_genre']}:\n"
+    await message.answer(f"Вы ваши рекомендации по жанру {data['current_genre']}:\n\n"
+                         f"{current_rec_films}\n\n"
                          f"Для возврата к меню <b>Нажмите кнопку внизу -> меню</b>",
                          reply_markup=ReplyKeyboardMarkup(
                              keyboard=[[KeyboardButton(text="Меню")]],
@@ -245,19 +278,20 @@ async def list_rec_film_genre(message: Message,state: FSMContext):
                          )
     await state.set_state(Form.auth_ok_status)
 
-
+# 4.3 Ручка предсказания фильма (TBD), делить на "холодных" и "обычных пользователе"
 @form_router.message(Form.auth_ok_status, F.text.casefold() == "понравится ли мне фильм?")
 async def predict_film(message: Message,state: FSMContext):
-    await message.answer('Этот фильм в твоем вкусе')
+    await message.answer('TBD: будет показывать понравится ли тебе фильм или нет')
 
 
-
-'''
+# вариант для локального запуска
+''' 
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
     dp.include_router(form_router)
 
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
@@ -265,9 +299,13 @@ if __name__ == "__main__":
     asyncio.run(main())
 '''
 
-
-
-
+# вариант с вебхуком для хостинга
+BASE_WEBHOOK_URL = ''
+WEBHOOK_HOST = 'https://pvv-bot-aiogram.onrender.com'
+WEBHOOK_PATH = f'/webhook/{TOKEN}'
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
+WEB_SERVER_HOST = '0.0.0.0'
+WEB_SERVER_PORT = 10000
 
 async def on_startup(bot: Bot) -> None:
     await bot.set_webhook(url=WEBHOOK_URL)
