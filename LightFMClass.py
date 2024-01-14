@@ -62,7 +62,7 @@ class LightFMRecSyc():
 RecSycFilms = pd.read_csv('RecSycFilms.csv', sep='\t', index_col=0)
 moveis_fin = pd.read_csv('IMDb.csv', sep='\t', index_col=0)
 
-with open("movies_to_predict", "rb") as fp:  # Unpickling
+with open("movies_to_predict", "rb") as fp:
     movies_to_predict = pickle.load(fp)
 
 ClassRecSyc = pickle.load(open('model_pred.pkl', 'rb'))
