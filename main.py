@@ -285,6 +285,7 @@ async def predict_film(message: Message,state: FSMContext):
 
 
 # вариант для локального запуска
+'''
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
@@ -327,4 +328,4 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
-'''
+
