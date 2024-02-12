@@ -18,6 +18,8 @@ import logging
 import os
 import sys
 
+from aiohttp import web
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, StateFilter
@@ -34,7 +36,7 @@ from dotenv import load_dotenv
 from LightFMClass import LightFMRecSyc, moveis_fin, movies_to_predict, RecSycFilms, ClassRecSyc
 
 load_dotenv()
-TOKEN = os.getenv('BOT_TOKEN_TEST')
+TOKEN = os.getenv('BOT_TOKEN')
 
 form_router = Router()
 
@@ -312,7 +314,7 @@ async def predict_film(message: Message):
 
 
 # вариант для локального запуска
-# '''
+'''
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
@@ -355,4 +357,4 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
-'''
+#'''
