@@ -88,7 +88,7 @@ genre_dict = {
 1. Вопрос авторизации (если пользователь уже пользовался - НЕТ, если впервые пришел - ДА)
 2. [Если 1п - НЕТ] - Задаем вопрос на проверку его id у себя в данных
 3. [Если 1п - НЕТ + 2п - ввел число] - проверяем в данных, если есть пропускаем к 4п, если нет, просим ввести повторно
-4. Открытие основного функционала: 
+4. Открытие основного функционала:
             - покажи рекомендации           - вывод рекомендаций из всех фильмов
             - покажи рекомендации по жанру  - вывод рекомендаций по жанру
             - понравится ли мне фильм?      - TBD пользователь вводит название фильма, мы предсказываем понравится/нет
@@ -124,9 +124,9 @@ async def author_func(message: Message):
 async def first_auth(message: Message, state: FSMContext) -> None:
     await state.set_state(Form.exist_user_status)
     await message.answer(
-        f"Привет)\n"
-        f"Этот бот может рекомендовать фильмы\n"
-        f"Подскажи, впервые пользуешься ботом?\n",
+        "Привет)\n"
+        "Этот бот может рекомендовать фильмы\n"
+        "Подскажи, впервые пользуешься ботом?\n",
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
@@ -187,7 +187,7 @@ async def first_auth_no_check_id(message: Message, state: FSMContext) -> None:
 # 3 первый ответ проверка id - не найден id
 @form_router.message(Form.check_id_status, ~F.text.isdigit())
 async def first_auth_unknown(message: Message) -> None:
-    await message.answer(f"Некорректный ввод, введи цифры",
+    await message.answer("Некорректный ввод, введи цифры",
                          reply_markup=ReplyKeyboardRemove(),
                          )
 
@@ -336,8 +336,10 @@ WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
 WEB_SERVER_HOST = '0.0.0.0'
 WEB_SERVER_PORT = 10000
 
+
 async def on_startup(bot: Bot) -> None:
     await bot.set_webhook(url=WEBHOOK_URL)
+
 
 def main() -> None:
     dp = Dispatcher()
@@ -357,4 +359,3 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
-#'''
