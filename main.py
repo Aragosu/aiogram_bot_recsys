@@ -101,7 +101,8 @@ genre_dict = {
 '''
 
 
-@form_router.message(StateFilter(default_state), ~Command("start"), ~Command("authors"), ~Command("test_25"))
+@form_router.message(StateFilter(default_state), ~Command("start"),
+                     ~Command("predict_film_test"), ~Command("authors"), ~Command("test_25"))
 async def unknown_func(message: Message):
     await message.answer(text='Для работы сервиса необходимо авторизоваться (/start)\n',
                          reply_markup=ReplyKeyboardRemove())
@@ -313,8 +314,15 @@ async def predict_film(message: Message):
     await message.answer('TBD: будет показывать понравится ли тебе фильм или нет')
 
 
+
+# тест ручки для предсказания понравится фильм или нет
+@form_router.message(Command("predict_film_test"))
+async def predict_film_test(message: Message):
+    await message.answer(text='Авторы бота:\nВлад Панфиленко\nЛилия Хорошенина',
+                         reply_markup=ReplyKeyboardRemove())
+
 # вариант для локального запуска
-'''
+
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
@@ -359,3 +367,4 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
+'''
