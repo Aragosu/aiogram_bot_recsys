@@ -1,9 +1,14 @@
 import pytest
 from aiogram.filters import Command
 from aiogram.methods import SendMessage
-from main import Form
-from main import author_func, first_auth, first_auth_err, first_auth_no, first_auth_no_check_id, first_auth_unknown, first_auth_yes
-from main import send_chouse_film, show_summary, list_rec_film, choice_genre, list_rec_film_genre, predict_film, unknown_func
+from app.bot_handlers.schemas import Form
+from app.bot_handlers.common import author_func, unknown_func
+from app.bot_handlers.handler_auth import (first_auth, first_auth_err, first_auth_no,
+                                           first_auth_no_check_id, first_auth_unknown,
+                                           first_auth_yes, send_chouse_film)
+from app.bot_handlers.handler_main_menu import (show_summary, list_rec_film,
+                                                choice_genre, list_rec_film_genre,
+                                                predict_film)
 from aiogram_tests import MockedBot
 from aiogram_tests.handler import MessageHandler
 from aiogram_tests.types.dataset import MESSAGE
@@ -155,9 +160,11 @@ async def test_list_rec_film_genre():
                           )
     calls = await requester.query(MESSAGE.as_object(text="Романтика"))
     answer_message = calls.send_message.fetchone().text
+
     assert answer_message == (
         f"Вы ваши рекомендации по жанру Романтика:\n\nCasablanca\nЖизнь других\nНа север через северо-запад\nСансет бульвар\nЖизнь прекрасна\n\nДля возврата к меню <b>Нажмите кнопку внизу -> меню</b>"
     )
+
     requester = MockedBot(MessageHandler(list_rec_film_genre,
                                          state=Form.choice_genre,
                                          state_data={"exist_user": "old",
